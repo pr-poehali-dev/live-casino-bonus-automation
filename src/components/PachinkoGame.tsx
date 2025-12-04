@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
@@ -14,36 +14,94 @@ const generateMultiplier = () => {
 
 const slots = [5, 10, 25, 50, 75, 100];
 
+// Генерация препятствий (колышки)
+const generatePegs = () => {
+  const pegs = [];
+  const rows = 6;
+  for (let row = 0; row < rows; row++) {
+    const pegsInRow = 5 + row;
+    for (let col = 0; col < pegsInRow; col++) {
+      pegs.push({
+        x: 20 + (60 / (pegsInRow - 1)) * col,
+        y: 15 + row * 13,
+      });
+    }
+  }
+  return pegs;
+};
+
+const pegs = generatePegs();
+
 const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
   const [isDropping, setIsDropping] = useState(false);
   const [landedSlot, setLandedSlot] = useState<number | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 50, y: 0 });
+  const [currentPegIndex, setCurrentPegIndex] = useState(0);
 
   const dropBall = () => {
     setIsDropping(true);
     setLandedSlot(null);
-    setBallPosition({ x: 50, y: 0 });
+    setBallPosition({ x: 50, y: 5 });
+    setCurrentPegIndex(0);
 
-    const interval = setInterval(() => {
-      setBallPosition(prev => ({
-        x: Math.max(10, Math.min(90, prev.x + (Math.random() - 0.5) * 15)),
-        y: prev.y + 5
-      }));
-    }, 100);
+    // Определяем целевой слот заранее
+    const multi = generateMultiplier();
+    const targetSlot = slots.reduce((prev, curr) =>
+      Math.abs(curr - multi) < Math.abs(prev - multi) ? curr : prev
+    );
+    const targetSlotIndex = slots.indexOf(targetSlot);
+    
+    // Вычисляем целевую X позицию (10-90% распределено по слотам)
+    const targetX = 15 + (targetSlotIndex / (slots.length - 1)) * 70;
 
-    setTimeout(() => {
-      clearInterval(interval);
-      const multi = generateMultiplier();
-      const closestSlot = slots.reduce((prev, curr) =>
-        Math.abs(curr - multi) < Math.abs(prev - multi) ? curr : prev
-      );
-      setLandedSlot(closestSlot);
-      setIsDropping(false);
+    // Проходим через каждый ряд препятствий
+    const pegsByRow: { [key: number]: typeof pegs } = {};
+    pegs.forEach(peg => {
+      const row = Math.floor(peg.y / 13);
+      if (!pegsByRow[row]) pegsByRow[row] = [];
+      pegsByRow[row].push(peg);
+    });
 
-      toast.success(`🎄 Шарик упал в слот ${closestSlot}x!`, {
-        duration: 4000,
-      });
-    }, 3000);
+    let currentX = 50;
+    let currentY = 5;
+    let step = 0;
+
+    const animationInterval = setInterval(() => {
+      const row = Math.floor(step / 2);
+      
+      if (row < Object.keys(pegsByRow).length) {
+        // Двигаемся к целевой позиции с небольшими колебаниями
+        const direction = targetX > currentX ? 1 : -1;
+        const randomness = (Math.random() - 0.5) * 3;
+        currentX += direction * 4 + randomness;
+        currentX = Math.max(12, Math.min(88, currentX));
+        
+        currentY += 3.5;
+
+        setBallPosition({ x: currentX, y: currentY });
+      } else {
+        // Шарик достиг низа - завершаем
+        clearInterval(animationInterval);
+        
+        // Финальное движение к слоту
+        const finalInterval = setInterval(() => {
+          currentY += 2;
+          setBallPosition({ x: currentX, y: currentY });
+          
+          if (currentY >= 85) {
+            clearInterval(finalInterval);
+            setLandedSlot(targetSlot);
+            setIsDropping(false);
+
+            toast.success(`🎄 Шарик упал в слот ${targetSlot}x!`, {
+              duration: 4000,
+            });
+          }
+        }, 50);
+      }
+      
+      step++;
+    }, 150);
   };
 
   return (
@@ -68,25 +126,40 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
         <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">☃️ Pachinko</h2>
 
         <div className="mb-8 relative">
-          <div className="h-64 bg-gradient-to-b from-[#0A0E1A] to-[#1A1F2C] rounded-lg border-2 border-[#D4AF37]/30 p-4 relative overflow-hidden">
+          <div className="h-80 bg-gradient-to-b from-[#0A0E1A] to-[#1A1F2C] rounded-lg border-2 border-[#D4AF37]/30 p-4 relative overflow-hidden">
+            {/* Препятствия (колышки) */}
+            {pegs.map((peg, index) => (
+              <div
+                key={index}
+                className="absolute w-2 h-2 rounded-full bg-[#D4AF37]/60"
+                style={{
+                  left: `${peg.x}%`,
+                  top: `${peg.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+            ))}
+
+            {/* Шарик */}
             {isDropping && (
               <div 
-                className="absolute transition-all duration-100 ease-linear"
+                className="absolute transition-all duration-150 ease-linear z-10"
                 style={{
                   left: `${ballPosition.x}%`,
                   top: `${ballPosition.y}%`,
                   transform: 'translate(-50%, -50%)'
                 }}
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FFD700] to-[#D4AF37] shadow-lg animate-pulse" />
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FFD700] to-[#D4AF37] shadow-lg animate-pulse" />
               </div>
             )}
 
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+            {/* Слоты внизу */}
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
               {slots.map((slot) => (
                 <div
                   key={slot}
-                  className={`w-12 h-16 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+                  className={`w-12 h-14 rounded-lg flex items-center justify-center font-bold text-xs transition-all duration-300 ${
                     landedSlot === slot
                       ? 'bg-[#FFD700] text-[#0A0E1A] scale-110 gold-glow'
                       : 'bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30'
