@@ -124,4 +124,24 @@
       transform: scale(1);
     }
   }
+
+  @keyframes coin-flip {
+    0% {
+      transform: rotateY(0deg) scale(1);
+    }
+    50% {
+      transform: rotateY(1800deg) scale(1.1);
+    }
+    100% {
+      transform: rotateY(3600deg) scale(1);
+    }
+  }
+
+  .animate-coin-flip {
+    animation: coin-flip 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  }
+
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
 }
