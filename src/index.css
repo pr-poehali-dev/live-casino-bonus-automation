@@ -75,4 +75,53 @@
       0 0 10px rgba(212, 175, 55, 0.5),
       0 0 20px rgba(212, 175, 55, 0.2);
   }
+
+  .snowflake {
+    position: absolute;
+    top: -50px;
+    font-size: 1.5rem;
+    opacity: 0.8;
+    animation: snowfall 6s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  @keyframes snowfall {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(1800deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-in-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
 }

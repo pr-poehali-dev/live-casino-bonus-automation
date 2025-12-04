@@ -20,14 +20,7 @@ const wheelSegments = [
 ];
 
 const generateMultiplier = () => {
-  const random = Math.random();
-  if (random < 0.7) {
-    return Math.floor(Math.random() * 146) + 5;
-  } else if (random < 0.95) {
-    return Math.floor(Math.random() * 351) + 150;
-  } else {
-    return Math.floor(Math.random() * 501) + 500;
-  }
+  return Math.floor(Math.random() * 96) + 5;
 };
 
 const CrazyWheel = ({ onClose }: CrazyWheelProps) => {
@@ -71,7 +64,14 @@ const CrazyWheel = ({ onClose }: CrazyWheelProps) => {
       </Button>
 
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">🎡 Crazy Wheel</h2>
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+          <div className="snowflake">❄️</div>
+          <div className="snowflake" style={{ left: '25%', animationDelay: '1.2s', animationDuration: '4.2s' }}>🎅</div>
+          <div className="snowflake" style={{ left: '45%', animationDelay: '0.7s' }}>❄️</div>
+          <div className="snowflake" style={{ left: '65%', animationDelay: '1.8s', animationDuration: '5.5s' }}>⭐</div>
+          <div className="snowflake" style={{ left: '85%', animationDelay: '0.4s' }}>❄️</div>
+        </div>
+        <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">🎁 Crazy Wheel</h2>
 
         <div className="mb-8 flex justify-center">
           <div className="relative">
@@ -143,7 +143,7 @@ const CrazyWheel = ({ onClose }: CrazyWheelProps) => {
             ТОП СЛОТЫ
           </div>
           <div className="text-sm text-[#D4AF37]">
-            Слоты с ⭐ (1x, 2x, 5x) умножаются на случайный множитель до 1000x
+            Слоты с ⭐ (1x, 2x, 5x) умножаются на случайный множитель до 100x
           </div>
         </div>
       </div>

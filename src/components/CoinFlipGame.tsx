@@ -9,14 +9,7 @@ interface CoinFlipGameProps {
 }
 
 const generateMultiplier = () => {
-  const random = Math.random();
-  if (random < 0.7) {
-    return Math.floor(Math.random() * 146) + 5;
-  } else if (random < 0.95) {
-    return Math.floor(Math.random() * 351) + 150;
-  } else {
-    return Math.floor(Math.random() * 501) + 500;
-  }
+  return Math.floor(Math.random() * 96) + 5;
 };
 
 const CoinFlipGame = ({ onClose }: CoinFlipGameProps) => {
@@ -53,7 +46,15 @@ const CoinFlipGame = ({ onClose }: CoinFlipGameProps) => {
       </Button>
 
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">🪙 Coin Flip</h2>
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+          <div className="snowflake">❄️</div>
+          <div className="snowflake" style={{ left: '20%', animationDelay: '1s', animationDuration: '4s' }}>❄️</div>
+          <div className="snowflake" style={{ left: '40%', animationDelay: '2s' }}>⭐</div>
+          <div className="snowflake" style={{ left: '60%', animationDelay: '0.5s', animationDuration: '5s' }}>❄️</div>
+          <div className="snowflake" style={{ left: '80%', animationDelay: '1.5s' }}>🎄</div>
+          <div className="snowflake" style={{ left: '90%', animationDelay: '2.5s', animationDuration: '4.5s' }}>❄️</div>
+        </div>
+        <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">🎄 Coin Flip</h2>
 
         <div className="mb-8 flex justify-center">
           <div
@@ -61,7 +62,7 @@ const CoinFlipGame = ({ onClose }: CoinFlipGameProps) => {
               isFlipping ? 'animate-spin' : ''
             } transition-all duration-500`}
           >
-            {result === null ? '🪙' : result === 'heads' ? '👑' : '💎'}
+            {result === null ? '🪙' : result === 'heads' ? '🎅' : '🎁'}
           </div>
         </div>
 
@@ -91,7 +92,7 @@ const CoinFlipGame = ({ onClose }: CoinFlipGameProps) => {
           </div>
           <div className="bg-[#0A0E1A]/50 rounded-lg p-4">
             <div className="text-xs text-[#F8F9FA]/50 mb-1">Макс. множитель</div>
-            <div className="text-xl font-bold text-[#FFD700]">1000x</div>
+            <div className="text-xl font-bold text-[#FFD700]">100x</div>
           </div>
         </div>
       </div>

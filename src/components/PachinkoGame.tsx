@@ -9,27 +9,30 @@ interface PachinkoGameProps {
 }
 
 const generateMultiplier = () => {
-  const random = Math.random();
-  if (random < 0.7) {
-    return Math.floor(Math.random() * 146) + 5;
-  } else if (random < 0.95) {
-    return Math.floor(Math.random() * 351) + 150;
-  } else {
-    return Math.floor(Math.random() * 501) + 500;
-  }
+  return Math.floor(Math.random() * 96) + 5;
 };
 
-const slots = [5, 10, 25, 50, 100, 250, 500, 1000];
+const slots = [5, 10, 25, 50, 75, 100];
 
 const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
   const [isDropping, setIsDropping] = useState(false);
   const [landedSlot, setLandedSlot] = useState<number | null>(null);
+  const [ballPosition, setBallPosition] = useState({ x: 50, y: 0 });
 
   const dropBall = () => {
     setIsDropping(true);
     setLandedSlot(null);
+    setBallPosition({ x: 50, y: 0 });
+
+    const interval = setInterval(() => {
+      setBallPosition(prev => ({
+        x: Math.max(10, Math.min(90, prev.x + (Math.random() - 0.5) * 15)),
+        y: prev.y + 5
+      }));
+    }, 100);
 
     setTimeout(() => {
+      clearInterval(interval);
       const multi = generateMultiplier();
       const closestSlot = slots.reduce((prev, curr) =>
         Math.abs(curr - multi) < Math.abs(prev - multi) ? curr : prev
@@ -37,7 +40,7 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
       setLandedSlot(closestSlot);
       setIsDropping(false);
 
-      toast.success(`Шарик упал в слот ${closestSlot}x!`, {
+      toast.success(`🎄 Шарик упал в слот ${closestSlot}x!`, {
         duration: 4000,
       });
     }, 3000);
@@ -54,13 +57,28 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
       </Button>
 
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">🎯 Pachinko</h2>
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+          <div className="snowflake">❄️</div>
+          <div className="snowflake" style={{ left: '15%', animationDelay: '0.8s', animationDuration: '5.5s' }}>⭐</div>
+          <div className="snowflake" style={{ left: '35%', animationDelay: '1.5s' }}>❄️</div>
+          <div className="snowflake" style={{ left: '55%', animationDelay: '0.3s', animationDuration: '4.8s' }}>🎁</div>
+          <div className="snowflake" style={{ left: '75%', animationDelay: '2s' }}>❄️</div>
+          <div className="snowflake" style={{ left: '85%', animationDelay: '1.2s', animationDuration: '5.2s' }}>🎄</div>
+        </div>
+        <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">☃️ Pachinko</h2>
 
         <div className="mb-8 relative">
           <div className="h-64 bg-gradient-to-b from-[#0A0E1A] to-[#1A1F2C] rounded-lg border-2 border-[#D4AF37]/30 p-4 relative overflow-hidden">
             {isDropping && (
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 animate-bounce">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FFD700] to-[#D4AF37] shadow-lg" />
+              <div 
+                className="absolute transition-all duration-100 ease-linear"
+                style={{
+                  left: `${ballPosition.x}%`,
+                  top: `${ballPosition.y}%`,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FFD700] to-[#D4AF37] shadow-lg animate-pulse" />
               </div>
             )}
 
@@ -109,7 +127,7 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
           </div>
           <div className="bg-[#0A0E1A]/50 rounded-lg p-4">
             <div className="text-xs text-[#F8F9FA]/50 mb-1">Макс</div>
-            <div className="text-xl font-bold text-[#FFD700]">1000x</div>
+            <div className="text-xl font-bold text-[#FFD700]">100x</div>
           </div>
         </div>
       </div>
