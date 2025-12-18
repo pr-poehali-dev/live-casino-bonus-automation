@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
@@ -12,18 +12,19 @@ const generateMultiplier = () => {
   return Math.floor(Math.random() * 96) + 5;
 };
 
-const slots = [5, 10, 25, 50, 75, 100];
+// Множители в перемежку - несколько низких, несколько средних, несколько высоких
+const slots = [5, 8, 10, 15, 20, 25, 30, 40, 50, 60, 75, 80, 90, 100];
 
-// Генерация препятствий (колышки)
+// Генерация препятствий (колышки) - больше рядов и колышков
 const generatePegs = () => {
   const pegs = [];
-  const rows = 6;
+  const rows = 10; // Увеличено с 6 до 10
   for (let row = 0; row < rows; row++) {
-    const pegsInRow = 5 + row;
+    const pegsInRow = 6 + row; // Больше колышков в каждом ряду
     for (let col = 0; col < pegsInRow; col++) {
       pegs.push({
-        x: 20 + (60 / (pegsInRow - 1)) * col,
-        y: 15 + row * 13,
+        x: 10 + (80 / (pegsInRow - 1)) * col,
+        y: 8 + row * 8,
       });
     }
   }
@@ -36,59 +37,61 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
   const [isDropping, setIsDropping] = useState(false);
   const [landedSlot, setLandedSlot] = useState<number | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 50, y: 0 });
-  const [currentPegIndex, setCurrentPegIndex] = useState(0);
 
   const dropBall = () => {
     setIsDropping(true);
     setLandedSlot(null);
-    setBallPosition({ x: 50, y: 5 });
-    setCurrentPegIndex(0);
+    setBallPosition({ x: 50, y: 3 });
 
-    // Определяем целевой слот заранее
-    const multi = generateMultiplier();
+    // Определяем целевой слот заранее - генерируем множитель и подбираем ближайший слот
+    const generatedMultiplier = generateMultiplier();
     const targetSlot = slots.reduce((prev, curr) =>
-      Math.abs(curr - multi) < Math.abs(prev - multi) ? curr : prev
+      Math.abs(curr - generatedMultiplier) < Math.abs(prev - generatedMultiplier) ? curr : prev
     );
     const targetSlotIndex = slots.indexOf(targetSlot);
     
-    // Вычисляем целевую X позицию (10-90% распределено по слотам)
-    const targetX = 15 + (targetSlotIndex / (slots.length - 1)) * 70;
+    // Вычисляем целевую X позицию для попадания в нужный слот
+    const targetX = 8 + (targetSlotIndex / (slots.length - 1)) * 84;
 
     // Проходим через каждый ряд препятствий
     const pegsByRow: { [key: number]: typeof pegs } = {};
     pegs.forEach(peg => {
-      const row = Math.floor(peg.y / 13);
+      const row = Math.floor((peg.y - 8) / 8);
       if (!pegsByRow[row]) pegsByRow[row] = [];
       pegsByRow[row].push(peg);
     });
 
     let currentX = 50;
-    let currentY = 5;
+    let currentY = 3;
     let step = 0;
 
     const animationInterval = setInterval(() => {
       const row = Math.floor(step / 2);
       
       if (row < Object.keys(pegsByRow).length) {
-        // Двигаемся к целевой позиции с небольшими колебаниями
+        // Двигаемся к целевой позиции с плавным отклонением
         const direction = targetX > currentX ? 1 : -1;
-        const randomness = (Math.random() - 0.5) * 3;
-        currentX += direction * 4 + randomness;
-        currentX = Math.max(12, Math.min(88, currentX));
+        const randomness = (Math.random() - 0.5) * 2; // Меньше случайности для точности
+        currentX += direction * 3 + randomness;
+        currentX = Math.max(8, Math.min(92, currentX));
         
-        currentY += 3.5;
+        currentY += 2.2; // Замедлено падение (было 3.5)
 
         setBallPosition({ x: currentX, y: currentY });
       } else {
         // Шарик достиг низа - завершаем
         clearInterval(animationInterval);
         
-        // Финальное движение к слоту
+        // Финальное движение точно к целевому слоту
         const finalInterval = setInterval(() => {
-          currentY += 2;
+          currentY += 1.5; // Еще медленнее на финише
+          // Корректируем X к точному центру слота
+          const diff = targetX - currentX;
+          currentX += diff * 0.3; // Плавное приближение к центру
+          
           setBallPosition({ x: currentX, y: currentY });
           
-          if (currentY >= 85) {
+          if (currentY >= 92) {
             clearInterval(finalInterval);
             setLandedSlot(targetSlot);
             setIsDropping(false);
@@ -97,11 +100,11 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
               duration: 4000,
             });
           }
-        }, 50);
+        }, 80); // Замедлено (было 50)
       }
       
       step++;
-    }, 150);
+    }, 220); // Замедлено общее падение (было 150)
   };
 
   return (
@@ -126,7 +129,8 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
         <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">☃️ Pachinko</h2>
 
         <div className="mb-8 relative">
-          <div className="h-80 bg-gradient-to-b from-[#0A0E1A] to-[#1A1F2C] rounded-lg border-2 border-[#D4AF37]/30 p-4 relative overflow-hidden">
+          {/* Увеличенное игровое поле */}
+          <div className="h-[520px] bg-gradient-to-b from-[#0A0E1A] to-[#1A1F2C] rounded-lg border-2 border-[#D4AF37]/30 p-4 relative overflow-hidden">
             {/* Препятствия (колышки) */}
             {pegs.map((peg, index) => (
               <div
@@ -140,29 +144,33 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
               />
             ))}
 
-            {/* Шарик */}
+            {/* Шарик - увеличенный и более заметный */}
             {isDropping && (
               <div 
-                className="absolute transition-all duration-150 ease-linear z-10"
+                className="absolute transition-all duration-200 ease-linear z-10"
                 style={{
                   left: `${ballPosition.x}%`,
                   top: `${ballPosition.y}%`,
                   transform: 'translate(-50%, -50%)'
                 }}
               >
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FFD700] to-[#D4AF37] shadow-lg animate-pulse" />
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFA500] shadow-lg animate-pulse gold-glow" />
               </div>
             )}
 
-            {/* Слоты внизу */}
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+            {/* Слоты внизу - больше слотов в перемежку */}
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 px-2">
               {slots.map((slot) => (
                 <div
                   key={slot}
-                  className={`w-12 h-14 rounded-lg flex items-center justify-center font-bold text-xs transition-all duration-300 ${
+                  className={`flex-1 h-16 rounded-lg flex items-center justify-center font-bold text-xs transition-all duration-300 ${
                     landedSlot === slot
                       ? 'bg-[#FFD700] text-[#0A0E1A] scale-110 gold-glow'
-                      : 'bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30'
+                      : slot <= 20
+                      ? 'bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30'
+                      : slot <= 50
+                      ? 'bg-[#D4AF37]/25 text-[#FFD700] border border-[#D4AF37]/40'
+                      : 'bg-[#D4AF37]/35 text-[#FFD700] border border-[#FFD700]/50 font-extrabold'
                   }`}
                 >
                   {slot}x
