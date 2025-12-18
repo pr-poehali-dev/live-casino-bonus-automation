@@ -18,9 +18,9 @@ const slots = [5, 8, 10, 15, 20, 25, 30, 40, 50, 60, 75, 80, 90, 100];
 // Генерация препятствий (колышки) - больше рядов и колышков
 const generatePegs = () => {
   const pegs = [];
-  const rows = 10; // Увеличено с 6 до 10
+  const rows = 10;
   for (let row = 0; row < rows; row++) {
-    const pegsInRow = 6 + row; // Больше колышков в каждом ряду
+    const pegsInRow = 6 + row;
     for (let col = 0; col < pegsInRow; col++) {
       pegs.push({
         x: 10 + (80 / (pegsInRow - 1)) * col,
@@ -63,7 +63,6 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
     
-    // Быстрое затухание для эффекта "тик"
     gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
 
@@ -98,17 +97,13 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
     setLandedSlot(null);
     setBallPosition({ x: 50, y: 3 });
 
-    // Определяем целевой слот заранее - генерируем множитель и подбираем ближайший слот
     const generatedMultiplier = generateMultiplier();
     const targetSlot = slots.reduce((prev, curr) =>
       Math.abs(curr - generatedMultiplier) < Math.abs(prev - generatedMultiplier) ? curr : prev
     );
     const targetSlotIndex = slots.indexOf(targetSlot);
-    
-    // Вычисляем целевую X позицию для попадания в нужный слот
     const targetX = 8 + (targetSlotIndex / (slots.length - 1)) * 84;
 
-    // Проходим через каждый ряд препятствий
     const pegsByRow: { [key: number]: typeof pegs } = {};
     pegs.forEach(peg => {
       const row = Math.floor((peg.y - 8) / 8);
@@ -125,10 +120,8 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
       const row = Math.floor(step / 2);
       
       if (row < Object.keys(pegsByRow).length) {
-        // Проверяем, если перешли на новый ряд - играем звук
         if (row !== lastRow && pegsByRow[row]) {
           lastRow = row;
-          // Находим ближайший колышек для визуальной подсветки
           const closestPeg = pegsByRow[row].reduce((prev, curr) => 
             Math.abs(curr.x - currentX) < Math.abs(prev.x - currentX) ? curr : prev
           );
@@ -136,30 +129,25 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
           setHitPegIndex(pegIndex);
           setTimeout(() => setHitPegIndex(null), 100);
           
-          // Варьируем частоту звука в зависимости от ряда для разнообразия
           const frequency = 600 + row * 50;
           playPegHitSound(frequency);
         }
 
-        // Двигаемся к целевой позиции с плавным отклонением
         const direction = targetX > currentX ? 1 : -1;
-        const randomness = (Math.random() - 0.5) * 2; // Меньше случайности для точности
+        const randomness = (Math.random() - 0.5) * 2;
         currentX += direction * 3 + randomness;
         currentX = Math.max(8, Math.min(92, currentX));
         
-        currentY += 2.2; // Замедлено падение (было 3.5)
+        currentY += 2.2;
 
         setBallPosition({ x: currentX, y: currentY });
       } else {
-        // Шарик достиг низа - завершаем
         clearInterval(animationInterval);
         
-        // Финальное движение точно к целевому слоту
         const finalInterval = setInterval(() => {
-          currentY += 1.5; // Еще медленнее на финише
-          // Корректируем X к точному центру слота
+          currentY += 1.5;
           const diff = targetX - currentX;
-          currentX += diff * 0.3; // Плавное приближение к центру
+          currentX += diff * 0.3;
           
           setBallPosition({ x: currentX, y: currentY });
           
@@ -168,26 +156,25 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
             setLandedSlot(targetSlot);
             setIsDropping(false);
             
-            // Звук попадания в слот
             playSlotSound();
 
             toast.success(`🎄 Шарик упал в слот ${targetSlot}x!`, {
               duration: 4000,
             });
           }
-        }, 80); // Замедлено (было 50)
+        }, 80);
       }
       
       step++;
-    }, 220); // Замедлено общее падение (было 150)
+    }, 220);
   };
 
   return (
-    <Card className="bg-[#1A1F2C] border-[#D4AF37]/30 p-8 relative">
+    <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-amber-600/20 p-8 relative shadow-2xl">
       <Button
         onClick={onClose}
         variant="ghost"
-        className="absolute top-4 right-4 text-[#F8F9FA]/50 hover:text-[#D4AF37]"
+        className="absolute top-4 right-4 text-slate-300 hover:text-amber-500"
       >
         <Icon name="X" size={24} />
       </Button>
@@ -201,93 +188,152 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
           <div className="snowflake" style={{ left: '75%', animationDelay: '2s' }}>❄️</div>
           <div className="snowflake" style={{ left: '85%', animationDelay: '1.2s', animationDuration: '5.2s' }}>🎄</div>
         </div>
-        <h2 className="text-3xl font-bold text-[#D4AF37] mb-6">☃️ Pachinko</h2>
+        <h2 className="text-3xl font-bold text-amber-400 mb-6 drop-shadow-lg">☃️ Pachinko</h2>
 
-        <div className="mb-8 relative">
-          {/* Увеличенное игровое поле */}
-          <div className="h-[520px] bg-gradient-to-b from-[#0A0E1A] to-[#1A1F2C] rounded-lg border-2 border-[#D4AF37]/30 p-4 relative overflow-hidden">
-            {/* Препятствия (колышки) */}
+        <div className="mb-8 relative perspective-1000">
+          {/* 3D игровое поле с реалистичными текстурами */}
+          <div className="h-[520px] relative overflow-hidden rounded-2xl shadow-2xl" style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%)',
+            border: '3px solid #78350f',
+            boxShadow: 'inset 0 0 60px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.6)'
+          }}>
+            {/* Деревянная рамка эффект */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: 'radial-gradient(circle at 50% 50%, transparent 60%, rgba(120, 53, 15, 0.3) 100%)'
+            }} />
+
+            {/* Препятствия (металлические колышки с 3D эффектом) */}
             {pegs.map((peg, index) => (
               <div
                 key={index}
-                className={`absolute w-2 h-2 rounded-full transition-all duration-100 ${
-                  hitPegIndex === index 
-                    ? 'bg-[#FFD700] scale-150 gold-glow' 
-                    : 'bg-[#D4AF37]/60'
-                }`}
+                className={`absolute transition-all duration-100`}
                 style={{
                   left: `${peg.x}%`,
                   top: `${peg.y}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
-              />
+              >
+                <div className={`w-3 h-3 rounded-full relative ${
+                  hitPegIndex === index ? 'scale-150' : ''
+                }`} style={{
+                  background: hitPegIndex === index 
+                    ? 'radial-gradient(circle at 30% 30%, #fbbf24, #d97706, #92400e)'
+                    : 'radial-gradient(circle at 30% 30%, #cbd5e1, #94a3b8, #475569)',
+                  boxShadow: hitPegIndex === index
+                    ? '0 0 20px rgba(251, 191, 36, 0.8), inset -2px -2px 4px rgba(0,0,0,0.4), inset 2px 2px 4px rgba(255,255,255,0.3)'
+                    : '0 2px 6px rgba(0,0,0,0.5), inset -2px -2px 4px rgba(0,0,0,0.4), inset 2px 2px 4px rgba(255,255,255,0.3)'
+                }}>
+                  <div className="absolute inset-0 rounded-full" style={{
+                    background: 'radial-gradient(circle at 40% 40%, rgba(255,255,255,0.6), transparent)'
+                  }} />
+                </div>
+              </div>
             ))}
 
-            {/* Шарик - увеличенный и более заметный */}
+            {/* Шарик - металлический с реалистичными бликами */}
             {isDropping && (
               <div 
-                className="absolute transition-all duration-200 ease-linear z-10"
+                className="absolute transition-all duration-200 ease-linear z-20"
                 style={{
                   left: `${ballPosition.x}%`,
                   top: `${ballPosition.y}%`,
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))'
                 }}
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFA500] shadow-lg animate-pulse gold-glow" />
+                <div className="w-8 h-8 rounded-full relative animate-pulse" style={{
+                  background: 'radial-gradient(circle at 35% 35%, #fef08a, #fbbf24, #f59e0b, #d97706)',
+                  boxShadow: '0 4px 12px rgba(251, 191, 36, 0.6), inset -3px -3px 6px rgba(0,0,0,0.4), inset 3px 3px 6px rgba(255,255,255,0.4)'
+                }}>
+                  {/* Световой блик */}
+                  <div className="absolute top-2 left-2 w-3 h-3 rounded-full" style={{
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.9), transparent)',
+                  }} />
+                  {/* Тень внутри */}
+                  <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full" style={{
+                    background: 'radial-gradient(circle, transparent, rgba(0,0,0,0.3))',
+                  }} />
+                </div>
               </div>
             )}
 
-            {/* Слоты внизу - больше слотов в перемежку */}
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 px-2">
-              {slots.map((slot) => (
-                <div
-                  key={slot}
-                  className={`flex-1 h-16 rounded-lg flex items-center justify-center font-bold text-xs transition-all duration-300 ${
-                    landedSlot === slot
-                      ? 'bg-[#FFD700] text-[#0A0E1A] scale-110 gold-glow'
-                      : slot <= 20
-                      ? 'bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30'
-                      : slot <= 50
-                      ? 'bg-[#D4AF37]/25 text-[#FFD700] border border-[#D4AF37]/40'
-                      : 'bg-[#D4AF37]/35 text-[#FFD700] border border-[#FFD700]/50 font-extrabold'
-                  }`}
-                >
-                  {slot}x
-                </div>
-              ))}
+            {/* Слоты с 3D эффектом и реалистичными цветами */}
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1 px-2">
+              {slots.map((slot) => {
+                const isLanded = landedSlot === slot;
+                const isLow = slot <= 20;
+                const isMedium = slot > 20 && slot <= 50;
+                const isHigh = slot > 50;
+
+                return (
+                  <div
+                    key={slot}
+                    className={`flex-1 h-16 rounded-lg flex items-center justify-center font-bold text-xs transition-all duration-300 relative overflow-hidden ${
+                      isLanded ? 'scale-110' : ''
+                    }`}
+                    style={{
+                      background: isLanded
+                        ? 'linear-gradient(145deg, #fbbf24, #f59e0b)'
+                        : isHigh
+                        ? 'linear-gradient(145deg, #dc2626, #991b1b)'
+                        : isMedium
+                        ? 'linear-gradient(145deg, #f97316, #c2410c)'
+                        : 'linear-gradient(145deg, #6366f1, #4338ca)',
+                      boxShadow: isLanded
+                        ? '0 0 25px rgba(251, 191, 36, 0.8), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3)'
+                        : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.4)',
+                      border: isLanded ? '2px solid #fef08a' : 'none',
+                      color: '#fff',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8)'
+                    }}
+                  >
+                    {/* Блик сверху */}
+                    <div className="absolute top-0 left-0 right-0 h-1/3" style={{
+                      background: 'linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)',
+                      borderRadius: '8px 8px 0 0'
+                    }} />
+                    <span className="relative z-10">{slot}x</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
         {landedSlot !== null && (
           <div className="mb-6 animate-fade-in">
-            <div className="text-5xl font-bold text-[#FFD700] gold-text-glow mb-2">
+            <div className="text-6xl font-bold mb-2" style={{
+              background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #fbbf24)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.6))'
+            }}>
               {landedSlot}x
             </div>
-            <div className="text-sm text-[#F8F9FA]/60">Выигрышный слот!</div>
+            <div className="text-sm text-slate-300">Выигрышный слот!</div>
           </div>
         )}
 
         <Button
           onClick={dropBall}
           disabled={isDropping}
-          className="bg-[#D4AF37] hover:bg-[#FFD700] text-[#0A0E1A] font-semibold px-8 py-6 text-lg disabled:opacity-50"
+          className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold px-8 py-6 text-lg disabled:opacity-50 shadow-lg transform transition-transform hover:scale-105"
         >
           {isDropping ? 'Шарик падает...' : 'Бросить шарик'}
         </Button>
 
         <div className="mt-8 grid grid-cols-3 gap-4 max-w-md mx-auto">
-          <div className="bg-[#0A0E1A]/50 rounded-lg p-4">
-            <div className="text-xs text-[#F8F9FA]/50 mb-1">Слотов</div>
-            <div className="text-xl font-bold text-[#D4AF37]">{slots.length}</div>
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="text-xs text-slate-400 mb-1">Слотов</div>
+            <div className="text-xl font-bold text-amber-400">{slots.length}</div>
           </div>
-          <div className="bg-[#0A0E1A]/50 rounded-lg p-4">
-            <div className="text-xs text-[#F8F9FA]/50 mb-1">Мин</div>
-            <div className="text-xl font-bold text-[#D4AF37]">5x</div>
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="text-xs text-slate-400 mb-1">Мин</div>
+            <div className="text-xl font-bold text-indigo-400">5x</div>
           </div>
-          <div className="bg-[#0A0E1A]/50 rounded-lg p-4">
-            <div className="text-xs text-[#F8F9FA]/50 mb-1">Макс</div>
-            <div className="text-xl font-bold text-[#FFD700]">100x</div>
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="text-xs text-slate-400 mb-1">Макс</div>
+            <div className="text-xl font-bold text-red-400">100x</div>
           </div>
         </div>
       </div>
