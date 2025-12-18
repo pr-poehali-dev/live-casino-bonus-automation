@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
@@ -25,6 +25,7 @@ const generatePegs = () => {
       pegs.push({
         x: 10 + (80 / (pegsInRow - 1)) * col,
         y: 8 + row * 8,
+        row: row,
       });
     }
   }
@@ -37,6 +38,60 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
   const [isDropping, setIsDropping] = useState(false);
   const [landedSlot, setLandedSlot] = useState<number | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 50, y: 0 });
+  const [hitPegIndex, setHitPegIndex] = useState<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Инициализация Web Audio API
+  useEffect(() => {
+    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    return () => {
+      audioContextRef.current?.close();
+    };
+  }, []);
+
+  // Функция для создания звука удара о колышек
+  const playPegHitSound = (frequency: number = 800) => {
+    if (!audioContextRef.current) return;
+
+    const audioContext = audioContextRef.current;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    
+    // Быстрое затухание для эффекта "тик"
+    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.05);
+  };
+
+  // Функция для звука попадания в слот
+  const playSlotSound = () => {
+    if (!audioContextRef.current) return;
+
+    const audioContext = audioContextRef.current;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.3);
+    
+    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  };
 
   const dropBall = () => {
     setIsDropping(true);
@@ -64,11 +119,28 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
     let currentX = 50;
     let currentY = 3;
     let step = 0;
+    let lastRow = -1;
 
     const animationInterval = setInterval(() => {
       const row = Math.floor(step / 2);
       
       if (row < Object.keys(pegsByRow).length) {
+        // Проверяем, если перешли на новый ряд - играем звук
+        if (row !== lastRow && pegsByRow[row]) {
+          lastRow = row;
+          // Находим ближайший колышек для визуальной подсветки
+          const closestPeg = pegsByRow[row].reduce((prev, curr) => 
+            Math.abs(curr.x - currentX) < Math.abs(prev.x - currentX) ? curr : prev
+          );
+          const pegIndex = pegs.findIndex(p => p.x === closestPeg.x && p.y === closestPeg.y);
+          setHitPegIndex(pegIndex);
+          setTimeout(() => setHitPegIndex(null), 100);
+          
+          // Варьируем частоту звука в зависимости от ряда для разнообразия
+          const frequency = 600 + row * 50;
+          playPegHitSound(frequency);
+        }
+
         // Двигаемся к целевой позиции с плавным отклонением
         const direction = targetX > currentX ? 1 : -1;
         const randomness = (Math.random() - 0.5) * 2; // Меньше случайности для точности
@@ -95,6 +167,9 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
             clearInterval(finalInterval);
             setLandedSlot(targetSlot);
             setIsDropping(false);
+            
+            // Звук попадания в слот
+            playSlotSound();
 
             toast.success(`🎄 Шарик упал в слот ${targetSlot}x!`, {
               duration: 4000,
@@ -135,7 +210,11 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
             {pegs.map((peg, index) => (
               <div
                 key={index}
-                className="absolute w-2 h-2 rounded-full bg-[#D4AF37]/60"
+                className={`absolute w-2 h-2 rounded-full transition-all duration-100 ${
+                  hitPegIndex === index 
+                    ? 'bg-[#FFD700] scale-150 gold-glow' 
+                    : 'bg-[#D4AF37]/60'
+                }`}
                 style={{
                   left: `${peg.x}%`,
                   top: `${peg.y}%`,
