@@ -39,6 +39,8 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
   const [landedSlot, setLandedSlot] = useState<number | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 50, y: 0 });
   const [hitPegIndex, setHitPegIndex] = useState<number | null>(null);
+  const [totalDrops, setTotalDrops] = useState(0);
+  const [history, setHistory] = useState<number[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // Инициализация Web Audio API
@@ -96,6 +98,7 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
     setIsDropping(true);
     setLandedSlot(null);
     setBallPosition({ x: 50, y: 3 });
+    setTotalDrops(prev => prev + 1);
 
     const generatedMultiplier = generateMultiplier();
     const targetSlot = slots.reduce((prev, curr) =>
@@ -155,6 +158,7 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
             clearInterval(finalInterval);
             setLandedSlot(targetSlot);
             setIsDropping(false);
+            setHistory(prev => [...prev, targetSlot]);
             
             playSlotSound();
 
@@ -322,20 +326,54 @@ const PachinkoGame = ({ onClose }: PachinkoGameProps) => {
           {isDropping ? 'Шарик падает...' : 'Бросить шарик'}
         </Button>
 
-        <div className="mt-8 grid grid-cols-3 gap-4 max-w-md mx-auto">
+        <div className="mt-8 grid grid-cols-4 gap-3 max-w-2xl mx-auto">
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-            <div className="text-xs text-slate-400 mb-1">Слотов</div>
-            <div className="text-xl font-bold text-amber-400">{slots.length}</div>
+            <div className="text-xs text-slate-400 mb-1">Бросков</div>
+            <div className="text-xl font-bold text-amber-400">{totalDrops}</div>
           </div>
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-            <div className="text-xs text-slate-400 mb-1">Мин</div>
-            <div className="text-xl font-bold text-indigo-400">5x</div>
+            <div className="text-xs text-slate-400 mb-1">Средний</div>
+            <div className="text-xl font-bold text-indigo-400">
+              {history.length > 0 ? (history.reduce((a, b) => a + b, 0) / history.length).toFixed(1) : '0'}x
+            </div>
           </div>
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-            <div className="text-xs text-slate-400 mb-1">Макс</div>
-            <div className="text-xl font-bold text-red-400">100x</div>
+            <div className="text-xs text-slate-400 mb-1">Лучший</div>
+            <div className="text-xl font-bold text-red-400">
+              {history.length > 0 ? Math.max(...history) : '0'}x
+            </div>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="text-xs text-slate-400 mb-1">Последний</div>
+            <div className="text-xl font-bold text-emerald-400">
+              {landedSlot ? `${landedSlot}x` : '-'}
+            </div>
           </div>
         </div>
+
+        {history.length > 0 && (
+          <div className="mt-6 bg-slate-800/30 rounded-lg p-4 border border-slate-700 max-w-2xl mx-auto">
+            <div className="text-xs text-slate-400 mb-3">История последних 10 бросков:</div>
+            <div className="flex gap-2 flex-wrap justify-center">
+              {history.slice(-10).reverse().map((value, index) => (
+                <div
+                  key={index}
+                  className="px-3 py-1 rounded-md text-sm font-semibold"
+                  style={{
+                    background: value > 50
+                      ? 'linear-gradient(145deg, #dc2626, #991b1b)'
+                      : value > 20
+                      ? 'linear-gradient(145deg, #f97316, #c2410c)'
+                      : 'linear-gradient(145deg, #6366f1, #4338ca)',
+                    color: '#fff'
+                  }}
+                >
+                  {value}x
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   );
