@@ -8,170 +8,204 @@ interface CrazyWheelProps {
   onClose: () => void;
 }
 
-const wheelSegments = [
-  { value: 2, color: '#FF6B9D', emoji: '🍭' },
-  { value: 5, color: '#4ECDC4', emoji: '🍬' },
-  { value: 1, color: '#FFE66D', emoji: '🧁' },
-  { value: 4, color: '#A8E6CF', emoji: '🍰' },
-  { value: 3, color: '#FF8B94', emoji: '🎂' },
+const bubbleColors = [
+  { bg: '#FF6B9D', shadow: '#FF1493' },
+  { bg: '#4ECDC4', shadow: '#00CED1' },
+  { bg: '#FFD93D', shadow: '#FFA500' },
+  { bg: '#A78BFA', shadow: '#7C3AED' },
+  { bg: '#FB923C', shadow: '#F97316' },
 ];
 
-
+interface Bubble {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  speed: number;
+  colorIndex: number;
+}
 
 const CrazyWheel = ({ onClose }: CrazyWheelProps) => {
   const [isSpinning, setIsSpinning] = useState(false);
-  const [result, setResult] = useState<{ value: number; color: string; emoji: string } | null>(null);
-  const [confetti, setConfetti] = useState<Array<{ id: number; x: number; y: number; emoji: string }>>([]);
+  const [result, setResult] = useState<number | null>(null);
+  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const [poppedNumbers, setPoppedNumbers] = useState<Array<{ value: number; x: number; y: number; id: number }>>([]);
 
-  const spinWheel = () => {
-    setIsSpinning(true);
-    setResult(null);
-    setConfetti([]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBubbles(prev => {
+        const updated = prev
+          .map(bubble => ({
+            ...bubble,
+            y: bubble.y - bubble.speed
+          }))
+          .filter(bubble => bubble.y > -100);
 
-    setTimeout(() => {
-      const segment = wheelSegments[Math.floor(Math.random() * wheelSegments.length)];
-      
-      const newConfetti = Array.from({ length: 30 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: -10,
-        emoji: ['🎉', '✨', '💫', '🌟', '🎊'][Math.floor(Math.random() * 5)]
-      }));
-      setConfetti(newConfetti);
-      
-      toast.success(`${segment.emoji} Выпало: ${segment.value}x!`, {
-        duration: 4000,
+        if (Math.random() > 0.7 && updated.length < 15) {
+          updated.push({
+            id: Date.now() + Math.random(),
+            x: Math.random() * 90 + 5,
+            y: 100,
+            size: 60 + Math.random() * 40,
+            speed: 0.3 + Math.random() * 0.5,
+            colorIndex: Math.floor(Math.random() * bubbleColors.length),
+          });
+        }
+
+        return updated;
       });
 
-      setResult(segment);
+      setPoppedNumbers(prev => prev.filter(item => Date.now() - item.id < 2000));
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const popBubble = (bubble: Bubble) => {
+    if (isSpinning) return;
+
+    const multipliers = [1, 2, 3, 4, 5];
+    const randomMultiplier = multipliers[Math.floor(Math.random() * multipliers.length)];
+
+    setPoppedNumbers(prev => [
+      ...prev,
+      { value: randomMultiplier, x: bubble.x, y: bubble.y, id: Date.now() }
+    ]);
+
+    setBubbles(prev => prev.filter(b => b.id !== bubble.id));
+
+    setIsSpinning(true);
+    setResult(randomMultiplier);
+
+    toast.success(`💥 Пузырь лопнул! Выпало: ${randomMultiplier}x`, {
+      duration: 3000,
+    });
+
+    setTimeout(() => {
       setIsSpinning(false);
-    }, 3000);
+      setResult(null);
+    }, 2000);
   };
 
   return (
-    <Card className="bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-cyan-500/20 border-pink-400/40 p-8 relative overflow-hidden">
+    <Card className="bg-gradient-to-br from-purple-900 via-pink-800 to-blue-900 border-pink-500/30 p-8 relative overflow-hidden">
       <Button
         onClick={onClose}
         variant="ghost"
-        className="absolute top-4 right-4 text-white/70 hover:text-pink-400 z-20"
+        className="absolute top-4 right-4 text-white/70 hover:text-pink-300 z-50"
       >
         <Icon name="X" size={24} />
       </Button>
 
-      <div className="text-center relative z-10">
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-          {confetti.map(c => (
-            <div
-              key={c.id}
-              className="absolute text-3xl animate-confetti-fall"
-              style={{
-                left: `${c.x}%`,
-                top: `${c.y}%`,
-                animationDelay: `${Math.random() * 0.5}s`,
-              }}
-            >
-              {c.emoji}
-            </div>
-          ))}
-        </div>
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-6 drop-shadow-lg">🍭 Bubble Surprise</h2>
+      <div className="text-center relative">
+        <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 mb-6 drop-shadow-lg">
+          💫 Bubble Surprise
+        </h2>
 
-        <div className="mb-8 flex justify-center">
-          <div className="relative">
-            <div
-              className={`w-80 h-80 rounded-full relative ${
-                isSpinning ? 'animate-spin' : ''
-              }`}
-              style={{
-                background: `conic-gradient(
-                  from 0deg,
-                  #FF6B9D 0deg 72deg,
-                  #4ECDC4 72deg 144deg,
-                  #FFE66D 144deg 216deg,
-                  #A8E6CF 216deg 288deg,
-                  #FF8B94 288deg 360deg
-                )`,
-                boxShadow: '0 0 60px rgba(255, 107, 157, 0.5), inset 0 0 40px rgba(255, 255, 255, 0.2)',
-                border: '6px solid rgba(255, 255, 255, 0.3)',
-              }}
-            >
-              <div className="absolute inset-0 rounded-full" style={{
-                background: 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent 50%)',
-              }} />
-              {wheelSegments.map((segment, index) => (
+        <div 
+          className="relative h-[500px] rounded-3xl overflow-hidden mb-6"
+          style={{
+            background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.3) 0%, rgba(219, 39, 119, 0.3) 100%)',
+            border: '3px solid rgba(236, 72, 153, 0.5)',
+            boxShadow: '0 0 40px rgba(236, 72, 153, 0.3), inset 0 0 40px rgba(139, 92, 246, 0.2)'
+          }}
+        >
+          {bubbles.map(bubble => {
+            const color = bubbleColors[bubble.colorIndex];
+            return (
+              <div
+                key={bubble.id}
+                onClick={() => popBubble(bubble)}
+                className="absolute cursor-pointer transition-transform hover:scale-110 animate-pulse"
+                style={{
+                  left: `${bubble.x}%`,
+                  top: `${bubble.y}%`,
+                  width: `${bubble.size}px`,
+                  height: `${bubble.size}px`,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
                 <div
-                  key={index}
-                  className="absolute top-1/2 left-1/2 origin-left"
+                  className="w-full h-full rounded-full flex items-center justify-center font-bold text-white text-2xl"
                   style={{
-                    transform: `rotate(${index * 72 + 36}deg)`,
+                    background: `radial-gradient(circle at 30% 30%, ${color.bg}, ${color.shadow})`,
+                    boxShadow: `0 8px 32px ${color.shadow}80, inset -4px -4px 8px rgba(0,0,0,0.3), inset 4px 4px 8px rgba(255,255,255,0.3)`,
+                    border: '3px solid rgba(255, 255, 255, 0.3)'
                   }}
                 >
-                  <div
-                    className="text-white font-bold text-2xl flex items-center gap-2 bg-black/20 backdrop-blur-sm px-3 py-1 rounded-full"
-                    style={{
-                      transform: 'translateX(70px) translateY(-50%)',
-                    }}
-                  >
-                    <span className="text-3xl">{segment.emoji}</span>
-                    <span>{segment.value}x</span>
-                  </div>
+                  ?
                 </div>
-              ))}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white shadow-2xl flex items-center justify-center text-3xl">
-                🎯
               </div>
+            );
+          })}
+
+          {poppedNumbers.map(item => (
+            <div
+              key={item.id}
+              className="absolute text-6xl font-bold text-yellow-300"
+              style={{
+                left: `${item.x}%`,
+                top: `${item.y}%`,
+                transform: 'translate(-50%, -50%)',
+                textShadow: '0 0 20px rgba(253, 224, 71, 0.8), 0 0 40px rgba(253, 224, 71, 0.5)',
+                animation: 'float-up 2s ease-out forwards'
+              }}
+            >
+              {item.value}x
             </div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-3 z-10">
-              <div className="w-0 h-0 border-l-[20px] border-r-[20px] border-t-[30px] border-transparent border-t-white drop-shadow-lg" />
-            </div>
-          </div>
+          ))}
+
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: 'radial-gradient(circle at 50% 120%, transparent 0%, rgba(139, 92, 246, 0.2) 100%)'
+          }} />
         </div>
 
         {result !== null && (
-          <div className="mb-6 animate-bounce-in">
-            <div className="text-8xl mb-4 animate-pulse">
-              {result.emoji}
-            </div>
-            <div
-              className="text-6xl font-bold mb-2 animate-scale-in"
+          <div className="mb-6 animate-fade-in">
+            <div 
+              className="text-6xl font-bold mb-2"
               style={{
-                color: result.color,
-                textShadow: `0 0 30px ${result.color}, 0 0 60px ${result.color}`,
+                color: '#FDE047',
+                textShadow: '0 0 20px rgba(253, 224, 71, 0.8), 0 0 40px rgba(253, 224, 71, 0.5)'
               }}
             >
-              {result.value}x
+              {result}x
             </div>
-            <div className="text-xl text-white/80 font-semibold">
-              🎊 Поздравляем! 🎊
+            <div className="text-lg text-pink-300">
+              Множитель активирован!
             </div>
           </div>
         )}
 
-        <Button
-          onClick={spinWheel}
-          disabled={isSpinning}
-          className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 hover:from-pink-600 hover:via-purple-600 hover:to-cyan-600 text-white font-bold px-12 py-6 text-xl disabled:opacity-50 shadow-2xl transform hover:scale-105 transition-all"
-        >
-          {isSpinning ? '🎪 Вращаем...' : '🎯 Крутить колесо!'}
-        </Button>
-
-        <div className="mt-8 bg-white/10 backdrop-blur-md rounded-2xl p-6 max-w-md mx-auto border border-white/20">
-          <div className="text-sm text-white/90 font-medium mb-3">
-            🎮 Возможные результаты:
+        <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6 max-w-md mx-auto border border-pink-500/30">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <span className="text-2xl">💎</span>
+            <div className="text-sm text-pink-300 font-semibold">КАК ИГРАТЬ</div>
+            <span className="text-2xl">💎</span>
           </div>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {wheelSegments.map((seg, i) => (
-              <div
-                key={i}
-                className="px-4 py-2 rounded-full font-bold text-white shadow-lg"
-                style={{ backgroundColor: seg.color }}
-              >
-                {seg.emoji} {seg.value}x
-              </div>
-            ))}
+          <div className="text-sm text-white/80 leading-relaxed">
+            Лопай пузыри, чтобы получить случайный множитель!<br/>
+            Выпадают: 1x, 2x, 3x, 4x, 5x
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes float-up {
+          0% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(0.5);
+          }
+          50% {
+            opacity: 1;
+            transform: translate(-50%, -100px) scale(1.2);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -150px) scale(0.8);
+          }
+        }
+      `}</style>
     </Card>
   );
 };
