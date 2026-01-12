@@ -1,3 +1,5 @@
 {
+  "robokassa-robokassa-webhook": "https://functions.poehali.dev/9a05d7ea-89b5-48d9-9ed5-e04847b21057",
+  "robokassa-robokassa": "https://functions.poehali.dev/ef72f557-88a1-4e45-8502-835ec6486308",
   "chatgpt-polza-chatgpt": "https://functions.poehali.dev/b6e86dd6-897d-47ff-a729-7f5094b869ec"
 }
