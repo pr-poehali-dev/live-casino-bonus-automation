@@ -9,6 +9,7 @@ import CrazyWheel from '@/components/CrazyWheel';
 import BonusHistory from '@/components/BonusHistory';
 import Leaderboard from '@/components/Leaderboard';
 import MoscowClock from '@/components/MoscowClock';
+import { ChatGPTPlaygroundPage } from '@/components/extensions/chatgpt-polza/ChatGPTPlaygroundPage';
 
 const Index = () => {
   const [activeGame, setActiveGame] = useState<string>('');
@@ -45,7 +46,7 @@ const Index = () => {
         </header>
 
         <Tabs defaultValue="games" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-[#1A1F2C] border border-[#D4AF37]/20">
+          <TabsList className="grid w-full grid-cols-4 mb-8 bg-[#1A1F2C] border border-[#D4AF37]/20">
             <TabsTrigger 
               value="games" 
               className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-[#0A0E1A]"
@@ -66,6 +67,13 @@ const Index = () => {
             >
               <Icon name="Trophy" className="mr-2" size={18} />
               Лидерборд
+            </TabsTrigger>
+            <TabsTrigger 
+              value="chatgpt"
+              className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-[#0A0E1A]"
+            >
+              <Icon name="MessageSquare" className="mr-2" size={18} />
+              ChatGPT
             </TabsTrigger>
           </TabsList>
 
@@ -159,6 +167,13 @@ const Index = () => {
 
           <TabsContent value="leaderboard">
             <Leaderboard />
+          </TabsContent>
+
+          <TabsContent value="chatgpt">
+            <ChatGPTPlaygroundPage 
+              apiUrl="https://functions.poehali.dev/b6e86dd6-897d-47ff-a729-7f5094b869ec"
+              defaultModel="openai/gpt-4o-mini"
+            />
           </TabsContent>
         </Tabs>
       </div>
