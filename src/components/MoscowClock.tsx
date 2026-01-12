@@ -1,11 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 interface GameRecommendation {
   game: string;
   emoji: string;
   value: string;
   color: string;
+}
+
+interface HistoryItem {
+  id: number;
+  timestamp: string;
+  recommendations: GameRecommendation[];
 }
 
 const generateRecommendations = (): GameRecommendation[] => {
@@ -43,6 +50,16 @@ const MoscowClock = () => {
   const [time, setTime] = useState(new Date());
   const [recommendations, setRecommendations] = useState<GameRecommendation[]>(generateRecommendations());
   const [secondsUntilUpdate, setSecondsUntilUpdate] = useState(35);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [isNewUpdate, setIsNewUpdate] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    return () => {
+      audioContextRef.current?.close();
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -52,11 +69,54 @@ const MoscowClock = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const playUpdateSound = () => {
+    if (!audioContextRef.current) return;
+
+    const audioContext = audioContextRef.current;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  };
+
   useEffect(() => {
     const updateTimer = setInterval(() => {
       setSecondsUntilUpdate(prev => {
         if (prev <= 1) {
-          setRecommendations(generateRecommendations());
+          const newRecs = generateRecommendations();
+          setRecommendations(newRecs);
+          
+          const now = new Date();
+          const timeString = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+          
+          setHistory(prevHistory => [
+            {
+              id: Date.now(),
+              timestamp: timeString,
+              recommendations: newRecs
+            },
+            ...prevHistory.slice(0, 9)
+          ]);
+          
+          setIsNewUpdate(true);
+          setTimeout(() => setIsNewUpdate(false), 1000);
+          
+          playUpdateSound();
+          toast.success('🎲 Рекомендации обновлены!', {
+            duration: 3000,
+          });
+          
           return 35;
         }
         return prev - 1;
@@ -136,11 +196,13 @@ const MoscowClock = () => {
           <p className="text-xs text-[#F8F9FA]/50 mt-1">Оптимальные множители сейчас</p>
         </div>
         
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           {recommendations.map((rec, index) => (
             <div
               key={index}
-              className="bg-[#0A0E1A]/50 backdrop-blur-sm rounded-xl p-4 border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all"
+              className={`bg-[#0A0E1A]/50 backdrop-blur-sm rounded-xl p-4 border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all ${
+                isNewUpdate ? 'animate-pulse scale-105' : ''
+              }`}
             >
               <div className="text-4xl mb-2">{rec.emoji}</div>
               <div className="text-xs text-[#F8F9FA]/60 mb-2">{rec.game}</div>
@@ -156,6 +218,43 @@ const MoscowClock = () => {
             </div>
           ))}
         </div>
+
+        {history.length > 0 && (
+          <div className="border-t border-[#D4AF37]/20 pt-4">
+            <h4 className="text-sm font-semibold text-[#D4AF37] mb-3 flex items-center gap-2">
+              <span>📊</span>
+              <span>История рекомендаций</span>
+            </h4>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {history.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-[#0A0E1A]/30 rounded-lg p-3 border border-[#D4AF37]/10"
+                >
+                  <div className="text-xs text-[#D4AF37]/60 mb-2 font-mono">
+                    {item.timestamp}
+                  </div>
+                  <div className="flex gap-2">
+                    {item.recommendations.map((rec, idx) => (
+                      <div
+                        key={idx}
+                        className="flex-1 bg-[#1A1F2C]/50 rounded px-2 py-1 text-center"
+                      >
+                        <div className="text-lg">{rec.emoji}</div>
+                        <div
+                          className="text-sm font-bold"
+                          style={{ color: rec.color }}
+                        >
+                          {rec.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         <div className="mt-4 text-xs text-[#F8F9FA]/40 text-center">
           💡 Рекомендации основаны на текущем времени и обновляются автоматически
