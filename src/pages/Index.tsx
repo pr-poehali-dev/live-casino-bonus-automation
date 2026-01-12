@@ -8,6 +8,7 @@ import PachinkoGame from '@/components/PachinkoGame';
 import CrazyWheel from '@/components/CrazyWheel';
 import BonusHistory from '@/components/BonusHistory';
 import Leaderboard from '@/components/Leaderboard';
+import MoscowClock from '@/components/MoscowClock';
 
 const Index = () => {
   const [activeGame, setActiveGame] = useState<string>('');
@@ -69,6 +70,8 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="games" className="space-y-6">
+            <MoscowClock />
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="bg-[#1A1F2C] border-[#D4AF37]/30 p-6 hover:border-[#D4AF37] transition-all duration-300 gold-glow cursor-pointer group">
                 <div className="flex items-center justify-between mb-4">
