@@ -17,31 +17,14 @@ interface HistoryItem {
 
 const generateRecommendations = (): GameRecommendation[] => {
   const wheelValues = [1, 1, 1, 2, 2, 2, 5, 5, 5, 3, 4];
-  const pachinkoValues = ['Bubble x1', 'Bubble x2', 'Bubble x3', 'Bubble x2', 'Bubble x1'];
-  const coinValues = ['Random x5-50', 'Random x10-100', 'Random x5-75'];
-  
   const wheelRec = wheelValues[Math.floor(Math.random() * wheelValues.length)];
-  const pachinkoRec = pachinkoValues[Math.floor(Math.random() * pachinkoValues.length)];
-  const coinRec = coinValues[Math.floor(Math.random() * coinValues.length)];
   
   return [
     {
-      game: 'Bubble Surprise',
-      emoji: '💫',
+      game: 'Колесо',
+      emoji: '🎡',
       value: `${wheelRec}x`,
       color: wheelRec >= 4 ? '#FB923C' : wheelRec >= 3 ? '#FFD93D' : '#4ECDC4'
-    },
-    {
-      game: 'Pachinko',
-      emoji: '🎯',
-      value: pachinkoRec,
-      color: '#8B5CF6'
-    },
-    {
-      game: 'Coin Flip',
-      emoji: '🪙',
-      value: coinRec,
-      color: '#F59E0B'
     }
   ];
 };
@@ -189,28 +172,27 @@ const MoscowClock = () => {
         
         <div className="mb-4">
           <h3 className="text-xl font-bold text-[#D4AF37] flex items-center justify-center gap-2">
-            <span>🎲</span>
-            <span>Рекомендации по играм</span>
-            <span>🎲</span>
+            <span>🎡</span>
+            <span>Что дать на колесе</span>
+            <span>🎡</span>
           </h3>
-          <p className="text-xs text-[#F8F9FA]/50 mt-1">Оптимальные множители сейчас</p>
+          <p className="text-xs text-[#F8F9FA]/50 mt-1">Рекомендация обновляется каждые 35 секунд</p>
         </div>
         
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="flex justify-center mb-6">
           {recommendations.map((rec, index) => (
             <div
               key={index}
-              className={`bg-[#0A0E1A]/50 backdrop-blur-sm rounded-xl p-4 border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all ${
+              className={`bg-[#0A0E1A]/50 backdrop-blur-sm rounded-xl p-8 border-2 border-[#D4AF37]/30 hover:border-[#D4AF37] transition-all ${
                 isNewUpdate ? 'animate-pulse scale-105' : ''
               }`}
             >
-              <div className="text-4xl mb-2">{rec.emoji}</div>
-              <div className="text-xs text-[#F8F9FA]/60 mb-2">{rec.game}</div>
+              <div className="text-6xl mb-3">{rec.emoji}</div>
               <div
-                className="text-2xl font-bold"
+                className="text-5xl font-bold"
                 style={{
                   color: rec.color,
-                  textShadow: `0 0 20px ${rec.color}80`
+                  textShadow: `0 0 30px ${rec.color}80`
                 }}
               >
                 {rec.value}
@@ -223,42 +205,31 @@ const MoscowClock = () => {
           <div className="border-t border-[#D4AF37]/20 pt-4">
             <h4 className="text-sm font-semibold text-[#D4AF37] mb-3 flex items-center gap-2">
               <span>📊</span>
-              <span>История рекомендаций</span>
+              <span>История выдач</span>
             </h4>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="flex gap-2 flex-wrap justify-center">
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-[#0A0E1A]/30 rounded-lg p-3 border border-[#D4AF37]/10"
+                  className="bg-[#0A0E1A]/30 rounded-lg px-4 py-2 border border-[#D4AF37]/10"
                 >
-                  <div className="text-xs text-[#D4AF37]/60 mb-2 font-mono">
+                  <div className="text-xs text-[#D4AF37]/60 mb-1 font-mono">
                     {item.timestamp}
                   </div>
-                  <div className="flex gap-2">
-                    {item.recommendations.map((rec, idx) => (
-                      <div
-                        key={idx}
-                        className="flex-1 bg-[#1A1F2C]/50 rounded px-2 py-1 text-center"
-                      >
-                        <div className="text-lg">{rec.emoji}</div>
-                        <div
-                          className="text-sm font-bold"
-                          style={{ color: rec.color }}
-                        >
-                          {rec.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {item.recommendations.map((rec, idx) => (
+                    <div
+                      key={idx}
+                      className="text-xl font-bold"
+                      style={{ color: rec.color }}
+                    >
+                      {rec.value}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
           </div>
         )}
-        
-        <div className="mt-4 text-xs text-[#F8F9FA]/40 text-center">
-          💡 Рекомендации основаны на текущем времени и обновляются автоматически
-        </div>
       </Card>
     </div>
   );
