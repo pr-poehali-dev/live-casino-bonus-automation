@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,6 +29,13 @@ const Index = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <Link to="/shop">
+                <Button className="bg-[#D4AF37] hover:bg-[#FFD700] text-[#0A0E1A] font-semibold">
+                  <Icon name="ShoppingBag" size={18} className="mr-2" />
+                  Магазин
+                </Button>
+              </Link>
+              <div className="h-12 w-px bg-[#D4AF37]/30" />
               <div className="text-right">
                 <div className="text-xs text-[#F8F9FA]/50 uppercase tracking-wide">
                   Активных сессий
