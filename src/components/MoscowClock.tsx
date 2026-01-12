@@ -3,9 +3,10 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 interface GameRecommendation {
-  game: string;
+  type: 'number' | 'multiplier' | 'bonus';
   emoji: string;
   value: string;
+  label: string;
   color: string;
 }
 
@@ -16,17 +17,48 @@ interface HistoryItem {
 }
 
 const generateRecommendations = (): GameRecommendation[] => {
-  const wheelValues = [1, 1, 1, 2, 2, 2, 5, 5, 5, 3, 4];
-  const wheelRec = wheelValues[Math.floor(Math.random() * wheelValues.length)];
+  // Цифры (1, 2, 5) - часто (70%)
+  const numbers = [1, 1, 1, 1, 2, 2, 2, 2, 5, 5, 5, 5];
   
-  return [
-    {
-      game: 'Колесо',
-      emoji: '🎡',
-      value: `${wheelRec}x`,
-      color: wheelRec >= 4 ? '#FB923C' : wheelRec >= 3 ? '#FFD93D' : '#4ECDC4'
-    }
-  ];
+  // Умножение (2x-10x) - редко (20%)
+  const multipliers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+  
+  // Бонусные раунды (Pachinko, Coin) - редко (10%)
+  const bonuses = ['Pachinko', 'Coin'];
+  
+  const rand = Math.random();
+  
+  if (rand < 0.7) {
+    // Цифра
+    const num = numbers[Math.floor(Math.random() * numbers.length)];
+    return [{
+      type: 'number',
+      emoji: '🔢',
+      value: num.toString(),
+      label: 'Цифра',
+      color: num === 5 ? '#FFD700' : num === 2 ? '#4ECDC4' : '#8B5CF6'
+    }];
+  } else if (rand < 0.9) {
+    // Умножение
+    const mult = multipliers[Math.floor(Math.random() * multipliers.length)];
+    return [{
+      type: 'multiplier',
+      emoji: '✖️',
+      value: `${mult}x`,
+      label: 'Умножение',
+      color: mult >= 7 ? '#FF6B9D' : mult >= 4 ? '#FB923C' : '#FFD93D'
+    }];
+  } else {
+    // Бонус
+    const bonus = bonuses[Math.floor(Math.random() * bonuses.length)];
+    return [{
+      type: 'bonus',
+      emoji: bonus === 'Pachinko' ? '🎯' : '🪙',
+      value: bonus,
+      label: 'Бонусный раунд',
+      color: '#A78BFA'
+    }];
+  }
 };
 
 const MoscowClock = () => {
@@ -187,6 +219,9 @@ const MoscowClock = () => {
                 isNewUpdate ? 'animate-pulse scale-105' : ''
               }`}
             >
+              <div className="text-xs text-[#D4AF37]/70 uppercase tracking-wider mb-2">
+                {rec.label}
+              </div>
               <div className="text-6xl mb-3">{rec.emoji}</div>
               <div
                 className="text-5xl font-bold"
@@ -217,12 +252,14 @@ const MoscowClock = () => {
                     {item.timestamp}
                   </div>
                   {item.recommendations.map((rec, idx) => (
-                    <div
-                      key={idx}
-                      className="text-xl font-bold"
-                      style={{ color: rec.color }}
-                    >
-                      {rec.value}
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="text-lg">{rec.emoji}</div>
+                      <div
+                        className="text-lg font-bold"
+                        style={{ color: rec.color }}
+                      >
+                        {rec.value}
+                      </div>
                     </div>
                   ))}
                 </div>
