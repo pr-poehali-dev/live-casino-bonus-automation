@@ -67,14 +67,87 @@ const MoscowClock = () => {
   const [secondsUntilUpdate, setSecondsUntilUpdate] = useState(35);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isNewUpdate, setIsNewUpdate] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const backgroundMusicRef = useRef<OscillatorNode | null>(null);
+  const musicGainRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     return () => {
+      stopBackgroundMusic();
       audioContextRef.current?.close();
     };
   }, []);
+
+  const playBackgroundMusic = () => {
+    if (!audioContextRef.current || isMusicPlaying) return;
+
+    const audioContext = audioContextRef.current;
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const osc3 = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    osc3.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Веселая мелодия в стиле казино
+    const melody = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    let noteIndex = 0;
+
+    osc1.type = 'square';
+    osc2.type = 'sine';
+    osc3.type = 'triangle';
+
+    osc1.frequency.setValueAtTime(melody[0], audioContext.currentTime);
+    osc2.frequency.setValueAtTime(melody[0] * 2, audioContext.currentTime);
+    osc3.frequency.setValueAtTime(melody[0] / 2, audioContext.currentTime);
+
+    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+
+    // Меняем ноты каждые 400мс
+    const interval = setInterval(() => {
+      noteIndex = (noteIndex + 1) % melody.length;
+      const freq = melody[noteIndex];
+      const now = audioContext.currentTime;
+      
+      osc1.frequency.setValueAtTime(freq, now);
+      osc2.frequency.setValueAtTime(freq * 2, now);
+      osc3.frequency.setValueAtTime(freq / 2, now);
+    }, 400);
+
+    osc1.start();
+    osc2.start();
+    osc3.start();
+
+    backgroundMusicRef.current = osc1;
+    musicGainRef.current = gainNode;
+    setIsMusicPlaying(true);
+
+    // Сохраняем interval для очистки
+    (backgroundMusicRef.current as any).interval = interval;
+  };
+
+  const stopBackgroundMusic = () => {
+    if (backgroundMusicRef.current) {
+      clearInterval((backgroundMusicRef.current as any).interval);
+      backgroundMusicRef.current.stop();
+      backgroundMusicRef.current = null;
+      musicGainRef.current = null;
+      setIsMusicPlaying(false);
+    }
+  };
+
+  const toggleMusic = () => {
+    if (isMusicPlaying) {
+      stopBackgroundMusic();
+    } else {
+      playBackgroundMusic();
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -157,6 +230,13 @@ const MoscowClock = () => {
   return (
     <div className="space-y-4">
       <Card className="bg-gradient-to-br from-[#1A1F2C] via-[#0A0E1A] to-[#1A1F2C] border-[#D4AF37]/30 p-8 text-center relative overflow-hidden">
+        <button
+          onClick={toggleMusic}
+          className="absolute top-4 right-4 bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/50 rounded-full w-12 h-12 flex items-center justify-center transition-all text-2xl z-20"
+          aria-label="Toggle music"
+        >
+          {isMusicPlaying ? '🔊' : '🔇'}
+        </button>
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[200px]">🕐</div>
         </div>
